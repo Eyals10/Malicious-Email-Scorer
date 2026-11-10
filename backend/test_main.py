@@ -42,7 +42,7 @@ def test_unconfigured_server_fails_closed(monkeypatch):
 def test_logged_in_user_gets_a_score(logged_in):
     r = client.post("/analyze", json={"sender": "a@b.com", "subject": "hi"})
     assert r.status_code == 200
-    assert set(r.json()) == {"score", "verdict", "reasons"}
+    assert set(r.json()) == {"score", "verdict", "reasons", "signals"}
 
 
 def test_oversized_sender_rejected(logged_in):

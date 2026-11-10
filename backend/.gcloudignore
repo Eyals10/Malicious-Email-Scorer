@@ -1,6 +1,6 @@
 .venv/
 __pycache__/
 .pytest_cache/
-test_main.py
+test_*.py
 requirements-dev.txt
 .env

@@ -5,6 +5,8 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from pydantic import BaseModel, Field
 
+from scoring import score_email
+
 # The add-on's OAuth client ID. Tokens issued for any other app are rejected.
 TOKEN_AUDIENCE = os.environ.get("TOKEN_AUDIENCE", "")
 
@@ -32,6 +34,7 @@ class AnalyzeRequest(BaseModel):
     # Generous limits: they block abuse, while the add-on trims real emails to fit.
     sender: str = Field(default="", max_length=500)
     subject: str = Field(default="", max_length=1000)
+    auth_results: str = Field(default="", max_length=5000)
 
 
 @app.get("/health")
@@ -41,9 +44,4 @@ def health():
 
 @app.post("/analyze")
 def analyze(req: AnalyzeRequest, user: str = Depends(verify_user)):
-    # Placeholder until the real signals arrive in step 3.
-    return {
-        "score": 0,
-        "verdict": "Safe",
-        "reasons": ["Backend connected. Real checks come in step 3."],
-    }
+    return score_email(req)
