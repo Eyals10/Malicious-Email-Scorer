@@ -43,12 +43,13 @@ def test_missing_header_adds_nothing():
 
 LOOKALIKES = ["paypa1.com", "micros0ft-support.com", "paypal-secure-login.com", "amazom.com",
               "xn--pple-43d.com", "paypal.verify-account.xyz", "ups-delivery-notice.com",
-              "rnicrosoft.com", "g00gle.com", "bankhapoalim-secure.co.il"]
+              "rnicrosoft.com", "g00gle.com", "bankhapoalim-secure.co.il", "microsfot.com", "vvhatsapp.com"]
 
 LEGITIMATE = ["gmail.com", "outlook.com", "hotmail.com", "yahoo.com", "ynet.co.il", "walla.co.il",
               "github.com", "mail.paypal.com", "email.apple.com", "groups.google.com",
               "apply.workable.com", "cooking.com", "finance-news.com", "cloudflare.com", "ops-team.com",
-              "purchase-orders.com", "team-updates.com", "teamviewer.com", "mycompany.co.il", "university.ac.il"]
+              "purchase-orders.com", "team-updates.com", "teamviewer.com", "mycompany.co.il", "university.ac.il",
+              "telegraph.co.uk", "money-transfer.com"]
 
 
 @pytest.mark.parametrize("domain", LOOKALIKES)

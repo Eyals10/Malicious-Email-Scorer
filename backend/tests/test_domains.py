@@ -19,3 +19,5 @@ def test_edit_distance():
     assert edit_distance("paypal", "paypal") == 0
     assert edit_distance("paypall", "paypal") == 1
     assert edit_distance("amazom", "amazon") == 1
+    assert edit_distance("microsfot", "microsoft") == 1  # swapped neighbours count once
+    assert edit_distance("telegraph", "telegram") == 2

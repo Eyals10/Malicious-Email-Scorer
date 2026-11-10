@@ -40,16 +40,17 @@ def decode_punycode(host: str) -> str:
 
 
 def normalize(text: str) -> str:
-    """Undo common disguises, so 'paypa1', 'аpple' and 'rnicrosoft' read as 'paypal', 'apple', 'microsoft'."""
-    return text.lower().translate(_HOMOGLYPHS).replace("rn", "m")
+    """Undo common disguises, so 'paypa1', 'аpple', 'rnicrosoft' and 'vvhatsapp' read as the real names."""
+    return text.lower().translate(_HOMOGLYPHS).replace("rn", "m").replace("vv", "w")
 
 
 def edit_distance(a: str, b: str) -> int:
-    """How many single-letter insertions, deletions or substitutions turn a into b."""
-    prev = list(range(len(b) + 1))
-    for i, ca in enumerate(a, 1):
-        cur = [i]
-        for j, cb in enumerate(b, 1):
-            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
-        prev = cur
-    return prev[-1]
+    """How many single-letter changes turn a into b: insert, delete, substitute,
+    or swap two neighbouring letters (so 'microsfot' is 1 change from 'microsoft')."""
+    d = [[i + j if i * j == 0 else 0 for j in range(len(b) + 1)] for i in range(len(a) + 1)]
+    for i in range(1, len(a) + 1):
+        for j in range(1, len(b) + 1):
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] != b[j - 1]))
+            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
+    return d[-1][-1]

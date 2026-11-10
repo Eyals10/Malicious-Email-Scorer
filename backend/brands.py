@@ -57,10 +57,10 @@ def lookalike_of(host: str) -> str | None:
         for label in labels:
             if key in {label.replace("-", ""), *label.split("-")}:
                 return name
-        # 2. Typo of the brand in the registered name: amazom.com, paypall.com (long names only)
+        # 2. One-change typo of the brand in the registered name: amazom.com, microsfot.com (long names only).
+        #    Two changes would also match real words (telegraph -> telegram), so the limit is 1.
         if len(key) >= 6 and key not in _NO_TYPO_CHECK:
-            limit = 1 if len(key) < 8 else 2
-            if any(edit_distance(part, key) <= limit for part in {main.replace("-", ""), *main.split("-")} if part):
+            if any(edit_distance(part, key) <= 1 for part in {main.replace("-", ""), *main.split("-")} if part):
                 return name
     return None
 
