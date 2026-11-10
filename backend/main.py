@@ -36,6 +36,7 @@ class AnalyzeRequest(BaseModel):
     subject: str = Field(default="", max_length=1000)
     auth_results: str = Field(default="", max_length=5000)
     reply_to: str = Field(default="", max_length=500)
+    html_body: str = Field(default="", max_length=200_000)
 
 
 @app.get("/health")

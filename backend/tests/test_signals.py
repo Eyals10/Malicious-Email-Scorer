@@ -1,6 +1,7 @@
 import pytest
 
-from signals import check_auth, check_identity
+from links import MAX_HOSTS
+from signals import check_auth, check_identity, check_links
 
 GMAIL = "mx.google.com;\r\n       "
 
@@ -83,3 +84,51 @@ def test_reply_to_different_domain():
 
 def test_reply_to_same_company_is_fine():
     assert check_identity("news@mail.company.com", "support@company.com") == []
+
+
+def link(href, text):
+    return f'<a href="{href}">{text}</a>'
+
+
+def link_points(html):
+    return sorted((s.points for s in check_links(html)), reverse=True)
+
+
+def test_link_text_shows_other_site():
+    assert link_points(link("https://secure-login.ru/x", "www.chase.com")) == [25]
+
+
+def test_link_text_matching_destination_is_fine():
+    assert link_points(link("https://www.paypal.com/signin", "www.paypal.com")) == []
+
+
+def test_newsletter_tracking_link_is_fine():
+    assert link_points(link("https://u1.ct.sendgrid.net/ls/click?x", "www.ynet.co.il")) == []
+
+
+def test_link_to_lookalike_domain():
+    assert link_points(link("https://paypa1-secure.com/login", "Log in")) == [25]
+
+
+def test_link_to_raw_ip():
+    assert link_points(link("http://185.23.11.4/login", "Log in")) == [20]
+
+
+def test_punycode_link_is_also_a_lookalike():
+    assert link_points(link("https://xn--pple-43d.com", "Apple ID")) == [25, 15]
+
+
+def test_many_shortened_links_give_one_reason():
+    signals = check_links(link("https://bit.ly/a", "a") * 3)
+    assert [s.points for s in signals] == [5]
+    assert "(and 2 more)" in signals[0].reason
+
+
+def test_normal_email_links_are_fine():
+    html = link("https://github.com/x", "View on GitHub") + link("mailto:a@b.com", "Email us")
+    assert link_points(html) == []
+
+
+def test_too_many_different_websites_is_flagged():
+    html = "".join(link(f"https://site{i}.com", "x") for i in range(MAX_HOSTS + 1))
+    assert link_points(html) == [15]
