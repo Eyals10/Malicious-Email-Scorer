@@ -1,6 +1,9 @@
 import re
 from dataclasses import dataclass
 
+from brands import brand_in_text, lookalike_of
+from domains import decode_punycode, display_name_of, domain_of, registrable_domain
+
 
 @dataclass(frozen=True)
 class Signal:
@@ -36,4 +39,29 @@ def check_auth(auth_results: str) -> list[Signal]:
             signals.append(Signal("auth", 10, "The email has no digital signature (DKIM missing)."))
     if "fail" in dmarc:
         signals.append(Signal("auth", 20, "The sender's domain says this email isn't really from them (DMARC failed)."))
+    return signals
+
+
+def check_identity(sender: str, reply_to: str) -> list[Signal]:
+    """Is the sender pretending to be someone else?"""
+    domain = domain_of(sender)
+    if not domain:
+        return []
+    signals = []
+
+    brand = lookalike_of(domain)
+    if brand:
+        reason = f"The sender's domain ({domain}) imitates {brand}."
+        if decode_punycode(domain) != domain:
+            reason += " It uses look-alike foreign letters to hide this."
+        signals.append(Signal("identity", 30, reason))
+
+    claimed = brand_in_text(display_name_of(sender))
+    if claimed and registrable_domain(domain) not in claimed[1]:
+        name = claimed[0]
+        signals.append(Signal("identity", 25, f"The sender's name says {name}, but the email comes from {domain}, which isn't {name}'s domain."))
+
+    reply_domain = domain_of(reply_to)
+    if reply_domain and registrable_domain(reply_domain) != registrable_domain(domain):
+        signals.append(Signal("identity", 15, f"Replies would go to {reply_domain}, not to the sender's domain ({domain})."))
     return signals
