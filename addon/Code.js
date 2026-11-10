@@ -2,7 +2,7 @@ const BACKEND_URL = 'https://email-scorer-api-727245842620.us-central1.run.app';
 
 const COLORS = { Safe: '#188038', Suspicious: '#E37400', Malicious: '#D93025' };
 const ADVICE = {
-  Safe: 'No warning signs found. Stay alert anyway.',
+  Safe: 'Low risk. Stay alert anyway.',
   Suspicious: "Be careful: don't click links or open attachments unless you trust the sender.",
   Malicious: "Likely phishing. Don't click links, open attachments or reply. Report it as phishing in Gmail.",
 };
@@ -60,14 +60,13 @@ function buildCard(result) {
     section.addWidget(paragraph(reasons));
     section.addWidget(paragraph('<i>' + ADVICE[result.verdict] + '</i>'));
   }
-  return CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle('Email Scorer'))
-    .addSection(section)
-    .build();
+  return CardService.newCardBuilder().addSection(section).build();
 }
 
+/** One block of card text. The invisible left-to-right mark (\u200E) ending each line keeps
+ *  the final period on the right when Gmail's interface is right-to-left (Hebrew, Arabic). */
 function paragraph(html) {
-  return CardService.newTextParagraph().setText(html);
+  return CardService.newTextParagraph().setText(html.replace(/<br>/g, '\u200E<br>') + '\u200E');
 }
 
 /** Reasons quote attacker-written text (domains, file names), so it must not be read as card formatting. */
