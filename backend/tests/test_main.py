@@ -1,5 +1,8 @@
+import io
+
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image
 
 import main
 
@@ -48,3 +51,13 @@ def test_logged_in_user_gets_a_score(logged_in):
 def test_oversized_sender_rejected(logged_in):
     r = client.post("/analyze", json={"sender": "x" * 501})
     assert r.status_code == 422
+
+
+def test_gauge_is_public_animated_gif():
+    r = client.get("/gauge/85.gif")  # no token: Gmail's image fetch can't send one
+    assert r.status_code == 200 and r.headers["content-type"] == "image/gif"
+    assert Image.open(io.BytesIO(r.content)).is_animated
+
+
+def test_gauge_rejects_out_of_range_scores():
+    assert client.get("/gauge/101.gif").status_code == 422

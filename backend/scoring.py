@@ -25,7 +25,7 @@ def score_signals(signals: list[Signal]) -> dict:
     return {
         "score": score,
         "verdict": verdict_for(score),
-        "reasons": [s.reason for s in top],
+        "reasons": [{"group": s.group, "text": s.reason} for s in top],
         "signals": [asdict(s) for s in signals],
     }
 

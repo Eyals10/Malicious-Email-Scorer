@@ -31,4 +31,4 @@ def test_override_forces_malicious():
 def test_top_three_reasons_by_points():
     signals = [Signal("auth", 5, "low"), Signal("links", 25, "high"),
                Signal("identity", 15, "mid"), Signal("auth", 10, "midlow")]
-    assert score_signals(signals)["reasons"] == ["high", "mid", "midlow"]
+    assert [r["text"] for r in score_signals(signals)["reasons"]] == ["high", "mid", "midlow"]

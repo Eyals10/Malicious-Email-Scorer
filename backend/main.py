@@ -1,11 +1,12 @@
 import os
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Path, Response
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from pydantic import BaseModel, Field
 
+from gauge import gauge_gif
 from scoring import score_email
 
 # The add-on's OAuth client ID. Tokens issued for any other app are rejected.
@@ -44,6 +45,13 @@ class AnalyzeRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/gauge/{score}.gif")
+def gauge(score: int = Path(ge=0, le=100)):
+    """Public: Gmail fetches card images itself, without our token. The picture shows only a number."""
+    return Response(gauge_gif(score), media_type="image/gif",
+                    headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.post("/analyze")
