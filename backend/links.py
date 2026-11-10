@@ -19,10 +19,11 @@ TRACKERS = {"sendgrid.net", "list-manage.com", "mandrillapp.com", "rs6.net",
 _COMMON_TLDS = {"com", "net", "org", "io", "co", "il", "uk", "us", "de", "fr", "ru", "cn",
                 "info", "biz", "gov", "edu", "me", "app", "xyz"}
 _URLISH = re.compile(r"(?:https?://)?(?:www\.)?((?:[a-z0-9-]+\.)+[a-z]{2,})")
+_BARE_URL = re.compile(r"https?://[^\s<>\"']+")
 
 
 class _LinkParser(HTMLParser):
-    """Collects (href, visible text) for every <a> tag."""
+    """Collects (href, visible text) for every <a> tag, plus web addresses typed out as plain text."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)  # turns &amp; into & etc.
@@ -32,15 +33,26 @@ class _LinkParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if tag == "a":
+            self._finish()  # browsers close an open link when the next one starts
             self._href = dict(attrs).get("href") or ""
             self._text = []
 
     def handle_data(self, data):
         if self._href is not None:
             self._text.append(data)
+        else:  # Gmail makes typed-out addresses clickable, so they count as links too
+            self.links.extend((url, url) for url in _BARE_URL.findall(data))
 
     def handle_endtag(self, tag):
-        if tag == "a" and self._href is not None:
+        if tag == "a":
+            self._finish()
+
+    def close(self):
+        super().close()
+        self._finish()  # a link never closed is still clickable
+
+    def _finish(self):
+        if self._href is not None:
             self.links.append((self._href.strip(), " ".join("".join(self._text).split())))
             self._href = None
 
