@@ -1,7 +1,7 @@
 import pytest
 
 from links import MAX_HOSTS
-from signals import check_auth, check_identity, check_links
+from signals import check_attachments, check_auth, check_identity, check_links
 
 GMAIL = "mx.google.com;\r\n       "
 
@@ -132,3 +132,28 @@ def test_normal_email_links_are_fine():
 def test_too_many_different_websites_is_flagged():
     html = "".join(link(f"https://site{i}.com", "x") for i in range(MAX_HOSTS + 1))
     assert link_points(html) == [15]
+
+
+@pytest.mark.parametrize("name", ["invoice.pdf.exe", "invoice.pdf      .exe", "Photo.JPG.scr", "invoice\u202Efdp.exe"])
+def test_disguised_attachment_is_malicious(name):
+    [signal] = check_attachments([name])
+    assert signal.points == 35 and signal.override
+    assert "\u202E" not in signal.reason  # the trick doesn't scramble our own card
+
+
+@pytest.mark.parametrize("name", ["setup.exe", "run.js", "photo.iso", "Payment.HTML"])
+def test_attachment_that_runs_code(name):
+    assert [s.points for s in check_attachments([name])] == [30]
+
+
+def test_macro_office_file():
+    assert [s.points for s in check_attachments(["budget.xlsm"])] == [20]
+
+
+def test_normal_attachments_are_fine():
+    assert check_attachments(["report.pdf", "photo.jpg", "notes.docx", "archive.zip", "README", ""]) == []
+
+
+def test_many_programs_give_one_reason():
+    [signal] = check_attachments(["a.exe", "b.exe", "c.exe"])
+    assert "(and 2 more)" in signal.reason

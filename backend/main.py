@@ -1,4 +1,5 @@
 import os
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from google.auth.transport import requests as google_requests
@@ -37,6 +38,7 @@ class AnalyzeRequest(BaseModel):
     auth_results: str = Field(default="", max_length=5000)
     reply_to: str = Field(default="", max_length=500)
     html_body: str = Field(default="", max_length=200_000)
+    attachments: list[Annotated[str, Field(max_length=255)]] = Field(default=[], max_length=100)
 
 
 @app.get("/health")

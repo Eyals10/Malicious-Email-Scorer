@@ -1,6 +1,6 @@
 from dataclasses import asdict
 
-from signals import Signal, check_auth, check_identity, check_links
+from signals import Signal, check_attachments, check_auth, check_identity, check_links
 
 GROUP_CAPS = {"auth": 35, "identity": 50, "links": 45, "attachments": 50}
 
@@ -34,4 +34,5 @@ def score_email(req) -> dict:
     """Run every check on the email."""
     return score_signals(check_auth(req.auth_results)
                          + check_identity(req.sender, req.reply_to)
-                         + check_links(req.html_body))
+                         + check_links(req.html_body)
+                         + check_attachments(req.attachments))

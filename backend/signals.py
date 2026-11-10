@@ -99,10 +99,43 @@ def check_links(html_body: str) -> list[Signal]:
         if reg in SHORTENERS:
             found.setdefault("shortener", []).append(f"A link uses a shortener ({host}) that hides where it leads.")
 
+    return _one_per_kind("links", _LINK_POINTS, found)
+
+
+_BIDI = re.compile("[\u202A-\u202E\u2066-\u2069]")  # invisible characters that flip how text is displayed
+
+RUNS_CODE = {"exe", "scr", "com", "bat", "cmd", "pif", "msi", "js", "jse", "vbs", "vbe", "wsf",
+             "hta", "ps1", "jar", "lnk", "iso", "img", "html", "htm"}
+DECOYS = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "jpg", "jpeg", "png", "gif", "zip"}
+MACROS = {"docm", "xlsm", "pptm", "dotm", "xlam"}
+
+_ATTACHMENT_POINTS = {"disguised": 35, "runs_code": 30, "macro": 20}
+
+
+def check_attachments(names: list[str]) -> list[Signal]:
+    """Judge attachments by file name: hidden real types, programs, macro files."""
+    found: dict[str, list[str]] = {}
+    for name in names:
+        shown = _BIDI.sub("", name).strip()  # never put the flipping characters in our own card
+        parts = [p.strip() for p in shown.lower().split(".")]
+        ext = parts[-1] if len(parts) > 1 else ""
+        if _BIDI.search(name) or (len(parts) > 2 and ext in RUNS_CODE and parts[-2] in DECOYS):
+            found.setdefault("disguised", []).append(f"The attachment {shown} hides its real file type (.{ext}).")
+        elif ext in RUNS_CODE:
+            found.setdefault("runs_code", []).append(
+                f"The attachment {shown} is a file type that can run code or show a fake login page (.{ext}).")
+        elif ext in MACROS:
+            found.setdefault("macro", []).append(f"The attachment {shown} is an Office file with macros, which can run code.")
+    return _one_per_kind("attachments", _ATTACHMENT_POINTS, found, overrides={"disguised"})
+
+
+def _one_per_kind(group: str, points_by_kind: dict[str, int], found: dict[str, list[str]],
+                  overrides: set[str] = frozenset()) -> list[Signal]:
+    """One signal per kind of problem; extra cases become '(and N more)'."""
     signals = []
-    for kind, points in _LINK_POINTS.items():
+    for kind, points in points_by_kind.items():
         if kind in found:
             reasons = found[kind]
             more = f" (and {len(reasons) - 1} more)" if len(reasons) > 1 else ""
-            signals.append(Signal("links", points, reasons[0] + more))
+            signals.append(Signal(group, points, reasons[0] + more, kind in overrides))
     return signals
