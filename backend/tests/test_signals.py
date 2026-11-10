@@ -110,8 +110,9 @@ def test_link_to_lookalike_domain():
     assert link_points(link("https://paypa1-secure.com/login", "Log in")) == [25]
 
 
-def test_link_to_raw_ip():
-    assert link_points(link("http://185.23.11.4/login", "Log in")) == [20]
+@pytest.mark.parametrize("href", ["http://185.23.11.4/login", "http://3105225988/login", "http://0xb9170b04/login"])
+def test_link_to_raw_ip(href):
+    assert link_points(link(href, "Log in")) == [20]
 
 
 def test_punycode_link_is_also_a_lookalike():
@@ -131,17 +132,24 @@ def test_normal_email_links_are_fine():
 
 def test_too_many_different_websites_is_flagged():
     html = "".join(link(f"https://site{i}.com", "x") for i in range(MAX_HOSTS + 1))
-    assert link_points(html) == [15]
+    assert link_points(html) == [25]
 
 
-@pytest.mark.parametrize("name", ["invoice.pdf.exe", "invoice.pdf      .exe", "Photo.JPG.scr", "invoice\u202Efdp.exe"])
+def test_padding_does_not_hide_a_bad_link():
+    padding = "".join(link(f"https://site{i}.com", "x") for i in range(MAX_HOSTS))
+    bad = link("https://secure-login.ru/x", "www.chase.com")
+    assert link_points(padding + bad) == [25, 25]  # the mismatch is still found, plus "too many"
+
+
+@pytest.mark.parametrize("name", ["invoice.pdf.exe", "invoice.pdf      .exe", "Photo.JPG.scr", "invoice\u202Efdp.exe",
+                                  "invoice.pdf.html."])
 def test_disguised_attachment_is_malicious(name):
     [signal] = check_attachments([name])
     assert signal.points == 35 and signal.override
     assert "\u202E" not in signal.reason  # the trick doesn't scramble our own card
 
 
-@pytest.mark.parametrize("name", ["setup.exe", "run.js", "photo.iso", "Payment.HTML"])
+@pytest.mark.parametrize("name", ["setup.exe", "run.js", "photo.iso", "Payment.HTML", "setup.exe. "])
 def test_attachment_that_runs_code(name):
     assert [s.points for s in check_attachments([name])] == [30]
 

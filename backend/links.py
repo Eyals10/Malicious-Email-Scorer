@@ -3,8 +3,8 @@ import re
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
-# Real emails link to a handful of different websites; past this, we stop and flag the email
-# instead of silently skipping links (padding with harmless links must not hide a bad one).
+# Real emails link to a handful of different websites. Past this, we skip the slow lookalike check
+# and flag the email instead (padding with harmless links must not hide a bad one).
 MAX_HOSTS = 200
 
 SHORTENERS = {"bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly",
@@ -63,6 +63,10 @@ def host_of(href: str) -> str:
 
 
 def is_ip(host: str) -> bool:
+    """'185.23.11.4', '::1', and the one-number forms browsers also open: '3105225988', '0xb9170b04'."""
+    last = host.rsplit(".", 1)[-1]
+    if last.isdigit() or last.startswith("0x"):  # no real website name ends in a number, so browsers read it as an IP
+        return True
     try:
         ipaddress.ip_address(host)
         return True

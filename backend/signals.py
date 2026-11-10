@@ -68,7 +68,8 @@ def check_identity(sender: str, reply_to: str) -> list[Signal]:
     return signals
 
 
-_LINK_POINTS = {"mismatch": 25, "lookalike": 25, "ip": 20, "too_many": 15, "punycode": 15, "shortener": 5}
+# "too_many" equals "lookalike", the check it replaces, so padding with harmless links never lowers the score.
+_LINK_POINTS = {"mismatch": 25, "lookalike": 25, "too_many": 25, "ip": 20, "punycode": 15, "shortener": 5}
 
 
 def check_links(html_body: str) -> list[Signal]:
@@ -80,16 +81,16 @@ def check_links(html_body: str) -> list[Signal]:
         if not host:
             continue
         if host not in seen_hosts:
-            if len(seen_hosts) >= MAX_HOSTS:
+            if len(seen_hosts) < MAX_HOSTS:
+                seen_hosts[host] = lookalike_of(host)
+            else:  # skip only the slow check; the cheap checks below still run on every link
                 found["too_many"] = ["This email links to an unusual number of different websites."]
-                break
-            seen_hosts[host] = lookalike_of(host)
 
         reg = registrable_domain(host)
         shown = domain_in_text(text)
         if shown and registrable_domain(shown) != reg and reg not in TRACKERS:
             found.setdefault("mismatch", []).append(f"A link says {shown} but really goes to {host}.")
-        brand = seen_hosts[host]
+        brand = seen_hosts.get(host)
         if brand:
             found.setdefault("lookalike", []).append(f"A link goes to {host}, which imitates {brand}.")
         if is_ip(host):
@@ -117,7 +118,8 @@ def check_attachments(names: list[str]) -> list[Signal]:
     found: dict[str, list[str]] = {}
     for name in names:
         shown = _BIDI.sub("", name).strip()  # never put the flipping characters in our own card
-        parts = [p.strip() for p in shown.lower().split(".")]
+        # Windows drops trailing dots and spaces when saving, so "setup.exe. " lands on disk as "setup.exe".
+        parts = [p.strip() for p in shown.lower().rstrip(". ").split(".")]
         ext = parts[-1] if len(parts) > 1 else ""
         if _BIDI.search(name) or (len(parts) > 2 and ext in RUNS_CODE and parts[-2] in DECOYS):
             found.setdefault("disguised", []).append(f"The attachment {shown} hides its real file type (.{ext}).")
