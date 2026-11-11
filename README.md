@@ -21,10 +21,11 @@ A Gmail add-on that checks every email you open and tells you, in plain words, w
 
 - **Explains every score:** plain-language reasons, no black box.
 - **Catches hidden tricks:** look-alike letters, fake link text, disguised file names.
+- **Knows known threats:** every link is checked against Google Safe Browsing's live list of phishing sites.
 - **Secure by design:** only this add-on can call the server, and nothing is stored.
-- **Tested against bypasses:** 98 automated tests plus real phishing-style emails in Gmail.
+- **Tested against bypasses:** 102 automated tests plus real phishing-style emails in Gmail.
 - **Easy to read:** animated risk gauge, icons and clear advice.
-- **Fast and cheap:** scores in milliseconds on Cloud Run, which scales to zero when idle.
+- **Fast:** gauges are drawn in advance and one server stays awake, so the card doesn't wait.
 
 <br>
 <br>
@@ -44,6 +45,7 @@ A Gmail add-on that checks every email you open and tells you, in plain words, w
  BACKEND    Python + FastAPI on Cloud Run (backend/)
    │        1. Verify token    only this add-on may call it
    │        2. Run checks      auth · identity · links · attachments
+   │                           links also checked with Google Safe Browsing
    │        3. Score           group caps → total → verdict → top 3 reasons
    │
    │        JSON: score, verdict, reasons
@@ -62,7 +64,7 @@ Each check returns zero or more signals. Scoring turns them into one verdict:
 ```
  signals  →  add points per group  →  cap each group  →  total (max 100)  →  verdict
 
- A disguised attachment skips the sum and forces the score to 100.
+ A disguised attachment, or a link on Google's phishing list, skips the sum and forces 100.
 ```
 
 | Score | Verdict |
@@ -112,6 +114,7 @@ then allowing at most one typo, so real words like `telegraph.co.uk` aren't mist
 
 | Check | Example | Points |
 |---|---|:---:|
+| On Google's list of known phishing or malware sites | checked live with Google Safe Browsing | +45, **forces Malicious** |
 | Link text shows a different site | text `www.chase.com`, link `secure-login.ru` | +25 |
 | Link to a lookalike domain | `https://paypa1-secure.com/login` | +25 |
 | Links to over 200 different sites | padding to hide a bad link | +25 |
@@ -121,6 +124,10 @@ then allowing at most one typo, so real words like `telegraph.co.uk` aren't mist
 
 Links are read with a real HTML parser, including links without a closing tag and addresses typed
 as plain text. Newsletter click-trackers (SendGrid, Mailchimp, …) are recognized so they don't raise false alarms.
+
+**Why Safe Browsing again, if Gmail already uses it?** Gmail checks links when an email **arrives**.
+Phishing sites are often added to Google's list hours later, so PhishLens checks again when you
+**open** the email. All of an email's links go to Google in one request, with a 3-second limit.
 
 <br>
 
@@ -144,6 +151,9 @@ The card lists the **top 3 reasons**. "All findings" (folded) shows every signal
 - **Only this add-on can use the server.** Every `/analyze` request must carry a Google ID token issued to
   this add-on. If the server isn't configured, it refuses everything instead of failing open.
 - **Nothing is stored.** Email data is sent over HTTPS, scored in memory and never logged or saved.
+- **Links sent to Google without private parts.** Safe Browsing gets each link without what follows
+  `?` or `#` (password-reset tokens, tracking IDs). Its API key lives in Secret Manager, never in code or logs.
+  If Google is slow or down, only that one check is skipped.
 - **Attacker text can't change the card.** Domains and file names quoted in reasons are escaped before display.
 - **Failure is never "Safe".** If scoring fails, the card says the email couldn't be checked.
 - **Size limits** on every field stop oversized requests. The only public URLs are `/health`
@@ -156,8 +166,8 @@ The card lists the **top 3 reasons**. "All findings" (folded) shows every signal
 
 Rule-based checks are fast and explainable, but they have honest limits:
 
-- **New, plain-looking phishing domains.** A fresh site like `account-review-center.com` with no
-  brand name or tricks scores low: there's no live reputation lookup yet.
+- **Brand-new phishing sites.** A fresh site like `account-review-center.com`, with no brand name or
+  tricks and not yet on Google's list, scores low.
 - **A hand-made list of 50 brands.** No list can name every brand, so a fake email from your own
   employer or a small local business isn't recognized.
 - **Everyday-word brands.** `zoom-photography.com` or `apple-orchard-farm.com` can be flagged as
@@ -182,13 +192,14 @@ Rule-based checks are fast and explainable, but they have honest limits:
 | [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`) | deploys the backend |
 | [Node.js](https://nodejs.org) + [clasp](https://github.com/google/clasp) | uploads the add-on code to Apps Script |
 | Python 3.12 | runs the backend and tests locally |
+| Google Safe Browsing API key (optional) | the known-phishing link check; free for non-commercial use (commercial: [Web Risk](https://cloud.google.com/web-risk)) |
 
 Python packages (`backend/requirements.txt`):
 
 | Package | Used for |
 |---|---|
 | `fastapi` + `uvicorn` | the web server and its endpoints |
-| `google-auth` + `requests` | verifying the add-on's Google ID token |
+| `google-auth` + `requests` | verifying the add-on's Google ID token, calling Safe Browsing |
 | `pillow` | drawing the animated gauge |
 | `pytest` + `httpx2` (dev only) | the test suite |
 
@@ -213,11 +224,29 @@ pytest
 gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
-gcloud run deploy email-scorer-api --source . --region us-central1 --allow-unauthenticated --max-instances 2
 ```
 
-Note the service URL it prints. `--allow-unauthenticated` lets Gmail reach the server; the app checks
-every request's token itself.
+**Safe Browsing key (optional):**
+1. Enable it: `gcloud services enable safebrowsing.googleapis.com secretmanager.googleapis.com`
+2. In the console, **APIs & Services → Credentials → Create credentials → API key**, and restrict it to
+   the **Safe Browsing API**.
+3. In **Security → Secret Manager**, create a secret named `safe-browsing-key` with the key as its value.
+4. Let Cloud Run read it (`PROJECT_NUMBER` is shown on the console's home page):
+   ```bash
+   gcloud secrets add-iam-policy-binding safe-browsing-key --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" --role="roles/secretmanager.secretAccessor"
+   ```
+
+**Deploy:**
+```bash
+gcloud run deploy email-scorer-api --source . --region us-central1 --allow-unauthenticated --max-instances 2 --min-instances 1 --set-secrets SAFE_BROWSING_KEY=safe-browsing-key:latest
+```
+
+- Note the service URL it prints. `--allow-unauthenticated` lets Gmail reach the server; the app
+  checks every request's token itself.
+- No Safe Browsing key? Leave out `--set-secrets ...`; that one check is then skipped.
+- `--min-instances 1` keeps one server awake (no slow first load) for a few dollars a month.
+  Use `0` to stay in the free tier.
+- The build draws all 101 gauge animations in advance, so it takes a few minutes.
 
 <br>
 
@@ -261,8 +290,9 @@ backend/
   domains.py         domain helpers: registrable domain, punycode, disguise undoing, typo distance
   brands.py          the 50 brands, lookalike and brand-name detection
   links.py           HTML link extraction and URL helpers
-  gauge.py           draws the animated gauge GIF
-  tests/             98 tests
+  safe_browsing.py   asks Google Safe Browsing about the email's links
+  gauge.py           draws the animated gauge GIFs (all 101, at build time)
+  tests/             102 tests
   Dockerfile         the Cloud Run container
 addon/
   Code.js            collects the email, calls the backend, builds the card
@@ -282,6 +312,5 @@ docs/                logo and the screenshots above
   - **"Not phishing"** for a false alarm on a safe email.
 
   Reports become training data for the model and help grow the brand and tracker lists.
-- **Google Safe Browsing** lookup for links: catches known-bad sites with ordinary names.
 - **Content signals:** urgency and threat wording ("verify within 24 hours", "account suspended").
 - **Public Suffix List** instead of the hand-picked domain-ending list; a larger, configurable brand list.
