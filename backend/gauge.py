@@ -3,7 +3,10 @@ sweeps up to the score and paints the band behind it from green to red."""
 import colorsys
 import io
 import math
+import sys
+from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -113,3 +116,13 @@ def gauge_gif(score: int) -> bytes:
     buf = io.BytesIO()
     frames[0].save(buf, format="GIF", save_all=True, append_images=frames[1:], duration=durations, optimize=True)
     return buf.getvalue()  # no loop setting, so it plays once
+
+
+if __name__ == "__main__":
+    # Runs while the Docker image is built: draw every score once and save it as a file,
+    # so the server only sends ready files. Usage: python gauge.py OUTPUT_FOLDER
+    out = Path(sys.argv[1])
+    out.mkdir(exist_ok=True)
+    with ProcessPoolExecutor() as pool:  # all CPU cores, for a shorter build
+        for score, gif in zip(range(101), pool.map(gauge_gif, range(101))):
+            (out / f"{score}.gif").write_bytes(gif)

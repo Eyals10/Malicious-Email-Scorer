@@ -1,5 +1,6 @@
 """PhishLens web server: the token check and the three addresses (/health, /gauge, /analyze)."""
 import os
+import pathlib
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Path, Response
@@ -12,6 +13,9 @@ from scoring import score_email
 
 # The add-on's OAuth client ID. Tokens issued for any other app are rejected.
 TOKEN_AUDIENCE = os.environ.get("TOKEN_AUDIENCE", "")
+
+# All 101 gauge animations, drawn while the Docker image is built (see Dockerfile).
+GAUGES = pathlib.Path(__file__).parent / "gauges"
 
 app = FastAPI(title="PhishLens")
 _google_request = google_requests.Request()  # used to fetch Google's public keys when checking a token
@@ -48,7 +52,9 @@ def health():
 @app.get("/gauge/{score}.gif")
 def gauge(score: int = Path(ge=0, le=100)):
     """Public: Gmail fetches card images itself, without our token. The picture shows only a number."""
-    return Response(gauge_gif(score), media_type="image/gif",
+    ready = GAUGES / f"{score}.gif"
+    gif = ready.read_bytes() if ready.exists() else gauge_gif(score)  # tests and local runs draw on the fly
+    return Response(gif, media_type="image/gif",
                     headers={"Cache-Control": "public, max-age=86400"})  # Google's image proxy may keep it a day
 
 

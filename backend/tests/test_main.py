@@ -59,5 +59,11 @@ def test_gauge_is_public_animated_gif():
     assert Image.open(io.BytesIO(r.content)).is_animated
 
 
+def test_gauge_served_from_ready_file(monkeypatch, tmp_path):
+    (tmp_path / "42.gif").write_bytes(b"GIF89a ready-made")  # what the Docker build leaves behind
+    monkeypatch.setattr(main, "GAUGES", tmp_path)
+    assert client.get("/gauge/42.gif").content == b"GIF89a ready-made"
+
+
 def test_gauge_rejects_out_of_range_scores():
     assert client.get("/gauge/101.gif").status_code == 422

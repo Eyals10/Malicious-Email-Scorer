@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from brands import brand_in_text, lookalike_of
 from domains import decode_punycode, display_name_of, domain_of, registrable_domain
 from links import MAX_HOSTS, SHORTENERS, TRACKERS, domain_in_text, extract_links, host_of, is_ip
+from safe_browsing import known_bad, without_private_parts
 
 
 @dataclass(frozen=True)
@@ -86,18 +87,22 @@ def check_identity(sender: str, reply_to: str) -> list[Signal]:
 
 # ── Links: where they really go ───────────────────────────────────────────────
 
+# "known_bad" is Google confirming the site, so it also forces Malicious (see the override below).
 # "too_many" equals "lookalike", the check it replaces, so padding with harmless links never lowers the score.
-_LINK_POINTS = {"mismatch": 25, "lookalike": 25, "too_many": 25, "ip": 20, "punycode": 15, "shortener": 5}
+_LINK_POINTS = {"known_bad": 45, "mismatch": 25, "lookalike": 25, "too_many": 25, "ip": 20, "punycode": 15,
+                "shortener": 5}
 
 
 def check_links(html_body: str) -> list[Signal]:
     """Where do the links really go? One signal per kind of problem, however many links have it."""
     found: dict[str, list[str]] = {}
     seen_hosts: dict[str, str | None] = {}  # host -> brand it imitates; the costly check runs once per host
+    checked: dict[str, None] = {}           # unique links for Google, private parts removed (keeps order)
     for href, text in extract_links(html_body):
         host = host_of(href)
         if not host:  # mailto:, javascript:, broken links
             continue
+        checked[without_private_parts(href)] = None
         if host not in seen_hosts:
             if len(seen_hosts) < MAX_HOSTS:
                 seen_hosts[host] = lookalike_of(host)
@@ -119,7 +124,10 @@ def check_links(html_body: str) -> list[Signal]:
         if reg in SHORTENERS:
             found.setdefault("shortener", []).append(f"A link uses a shortener ({host}) that hides where it leads.")
 
-    return _one_per_kind("links", _LINK_POINTS, found)
+    # One request to Google for all the links together.
+    for url, threat in known_bad(list(checked)).items():
+        found.setdefault("known_bad", []).append(f"A link goes to a site Google lists as {threat} ({host_of(url)}).")
+    return _one_per_kind("links", _LINK_POINTS, found, overrides=("known_bad",))
 
 
 # ── Attachments: is a file hiding what it is? ─────────────────────────────────
