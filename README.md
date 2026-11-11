@@ -23,7 +23,7 @@ A Gmail add-on that checks every email you open and tells you, in plain words, w
 - **Catches hidden tricks:** look-alike letters, fake link text, disguised file names.
 - **Knows known threats:** every link is checked against Google Safe Browsing's live list of phishing sites.
 - **Secure by design:** only this add-on can call the server, and nothing is stored.
-- **Tested against bypasses:** 102 automated tests plus real phishing-style emails in Gmail.
+- **Tested against bypasses:** 103 automated tests plus real phishing-style emails in Gmail.
 - **Easy to read:** animated risk gauge, icons and clear advice.
 - **Fast:** gauges are drawn in advance and one server stays awake, so the card doesn't wait.
 
@@ -127,7 +127,8 @@ as plain text. Newsletter click-trackers (SendGrid, Mailchimp, …) are recogniz
 
 **Why Safe Browsing again, if Gmail already uses it?** Gmail checks links when an email **arrives**.
 Phishing sites are often added to Google's list hours later, so PhishLens checks again when you
-**open** the email. All of an email's links go to Google in one request, with a 3-second limit.
+**open** the email. Every link is checked: up to 500 per request (one request for almost any email),
+within a 5-second total limit.
 
 <br>
 
@@ -292,7 +293,7 @@ backend/
   links.py           HTML link extraction and URL helpers
   safe_browsing.py   asks Google Safe Browsing about the email's links
   gauge.py           draws the animated gauge GIFs (all 101, at build time)
-  tests/             102 tests
+  tests/             103 tests
   Dockerfile         the Cloud Run container
 addon/
   Code.js            collects the email, calls the backend, builds the card
