@@ -279,6 +279,22 @@ cd ../addon
 3. In the Apps Script editor: **Deploy → Test deployments → Install**. Open Gmail and open any email.
 
 <br>
+
+### 5. Send yourself the demo emails
+
+`tools/send_test_emails.py` sends four harmless test emails from a second Gmail account, one for
+each result: **Safe 0**, **Suspicious 50**, **Malicious 85** and **Malicious 100**. Each subject says
+what PhishLens should show.
+
+```bash
+python tools/send_test_emails.py --dry-run     # list them first
+python tools/send_test_emails.py --sender other.account@gmail.com --to you@gmail.com
+```
+
+It asks for that account's [app password](https://myaccount.google.com/apppasswords) and never stores it.
+All links point to reserved `.example` domains, so they lead nowhere.
+
+<br>
 <br>
 
 ## Project structure
@@ -298,6 +314,9 @@ backend/
 addon/
   Code.js            collects the email, calls the backend, builds the card
   appsscript.json    add-on manifest: permissions, trigger, allowed URL
+tools/
+  send_test_emails.py  sends the four demo emails
+.github/workflows/   runs the tests on every push
 docs/                logo and the screenshots above
 ```
 
@@ -315,3 +334,10 @@ docs/                logo and the screenshots above
   Reports become training data for the model and help grow the brand and tracker lists.
 - **Content signals:** urgency and threat wording ("verify within 24 hours", "account suspended").
 - **Public Suffix List** instead of the hand-picked domain-ending list; a larger, configurable brand list.
+
+<br>
+<br>
+
+## License
+
+[MIT](LICENSE)
