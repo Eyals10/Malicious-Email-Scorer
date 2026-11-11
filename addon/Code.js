@@ -37,15 +37,21 @@ function analyze(message) {
 /** The parts of the email the backend checks, trimmed to its limits so a huge email still gets scored. */
 function emailData(message) {
   return {
-    sender: message.getFrom().slice(0, 500),
-    subject: message.getSubject().slice(0, 1000),
-    reply_to: message.getReplyTo().slice(0, 500),
-    auth_results: message.getHeader('Authentication-Results').slice(0, 5000),
-    html_body: message.getBody().slice(0, 200000),
+    sender: cut(message.getFrom(), 500),
+    reply_to: cut(message.getReplyTo(), 500),
+    auth_results: cut(message.getHeader('Authentication-Results'), 5000),
+    html_body: cut(message.getBody(), 200000),
     attachments: message.getAttachments({ includeInlineImages: false })
       .slice(0, 100)
-      .map((a) => a.getName().slice(0, 255)),
+      .map((a) => cut(a.getName(), 255)),
   };
+}
+
+/** Trims text to a backend limit without splitting an emoji. JavaScript stores an emoji as two
+ *  halves; a lone first half makes the backend reject the whole email, which an attacker could
+ *  use on purpose to turn a "Malicious" card into "Could not check". */
+function cut(text, max) {
+  return text.slice(0, max).replace(/[\uD800-\uDBFF]$/, '');
 }
 
 function buildCard(result) {

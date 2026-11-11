@@ -35,7 +35,6 @@ def verify_user(authorization: str | None = Header(default=None)) -> str:
 class AnalyzeRequest(BaseModel):
     # Generous limits: they block abuse, while the add-on trims real emails to fit.
     sender: str = Field(default="", max_length=500)
-    subject: str = Field(default="", max_length=1000)
     auth_results: str = Field(default="", max_length=5000)
     reply_to: str = Field(default="", max_length=500)
     html_body: str = Field(default="", max_length=200_000)

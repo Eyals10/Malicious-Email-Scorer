@@ -279,4 +279,3 @@ docs/screenshots/    the images above
 - **Google Safe Browsing** lookup for links: catches known-bad sites with ordinary names.
 - **Content signals:** urgency and threat wording ("verify within 24 hours", "account suspended").
 - **Public Suffix List** instead of the hand-picked domain-ending list; a larger, configurable brand list.
-- Caching Google's sign-in keys to save ~100 ms per email.
