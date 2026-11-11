@@ -14,7 +14,7 @@ SHORTENERS = {"bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff
 # "text says ynet.co.il, link goes to sendgrid.net" is normal for them.
 # shortcut: a few big services only; attackers who use these services also skip the text-mismatch check.
 TRACKERS = {"sendgrid.net", "list-manage.com", "mandrillapp.com", "rs6.net",
-            "hubspotlinks.com", "sparkpostmail.com", "exct.net"}
+            "hubspotlinks.com", "sparkpostmail.com", "exct.net", "awstrack.me"}
 
 _COMMON_TLDS = {"com", "net", "org", "io", "co", "il", "uk", "us", "de", "fr", "ru", "cn",
                 "info", "biz", "gov", "edu", "me", "app", "xyz"}

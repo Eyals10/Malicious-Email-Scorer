@@ -102,8 +102,10 @@ def test_link_text_matching_destination_is_fine():
     assert link_points(link("https://www.paypal.com/signin", "www.paypal.com")) == []
 
 
-def test_newsletter_tracking_link_is_fine():
-    assert link_points(link("https://u1.ct.sendgrid.net/ls/click?x", "www.ynet.co.il")) == []
+@pytest.mark.parametrize("href", ["https://u1.ct.sendgrid.net/ls/click?x",
+                                  "https://zg5ltddm.r.eu-west-1.awstrack.me/L0/x"])  # Amazon SES, seen in a real email
+def test_newsletter_tracking_link_is_fine(href):
+    assert link_points(link(href, "www.hiremetech.com")) == []
 
 
 def test_link_to_lookalike_domain():

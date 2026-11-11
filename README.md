@@ -16,7 +16,7 @@ A Gmail add-on that checks every email you open and tells you, in plain words, w
 - **Explains every score:** plain-language reasons, no black box.
 - **Catches hidden tricks:** look-alike letters, fake link text, disguised file names.
 - **Secure by design:** only this add-on can call the server, and nothing is stored.
-- **Tested against bypasses:** 97 automated tests plus real phishing-style emails in Gmail.
+- **Tested against bypasses:** 98 automated tests plus real phishing-style emails in Gmail.
 - **Easy to read:** animated risk gauge, icons and clear advice.
 - **Fast and cheap:** scores in milliseconds on Cloud Run, which scales to zero when idle.
 
@@ -152,12 +152,13 @@ Rule-based checks are fast and explainable, but they have honest limits:
 
 - **New, plain-looking phishing domains.** A fresh site like `account-review-center.com` with no
   brand name or tricks scores low: there's no live reputation lookup yet.
-- **50 brands.** A fake email from your own employer or a small local business isn't recognized.
+- **A hand-made list of 50 brands.** No list can name every brand, so a fake email from your own
+  employer or a small local business isn't recognized.
 - **Everyday-word brands.** `zoom-photography.com` or `apple-orchard-farm.com` can be flagged as
   imitating Zoom or Apple (Suspicious).
 - **Attachments by name only.** A malicious PDF, or a password-protected zip, passes.
 - **The email's wording isn't read.** "Your account will be closed in 24 hours" adds no points.
-- **Some link-tracking and security services** (e.g. Amazon SES, Outlook Safe Links) aren't
+- **Some link-tracking and security services** (e.g. Outlook Safe Links, Proofpoint) aren't
   recognized yet, which can cause a small "link goes elsewhere" false alarm.
 - **Point values are informed judgment,** not trained on data.
 
@@ -203,6 +204,7 @@ pytest
 ### 2. Deploy the backend
 
 ```bash
+gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
 gcloud run deploy email-scorer-api --source . --region us-central1 --allow-unauthenticated --max-instances 2
@@ -221,11 +223,13 @@ clasp login
 cd ../addon
 ```
 
-1. Put your service URL in `BACKEND_URL` (`Code.js`) and in `urlFetchWhitelist` (`appsscript.json`).
-2. Replace `addon/.clasp.json` with your own project: delete it, run
+1. Turn on **Google Apps Script API** at https://script.google.com/home/usersettings (once per account;
+   clasp fails without it).
+2. Put your service URL in `BACKEND_URL` (`Code.js`) and in `urlFetchWhitelist` (`appsscript.json`).
+3. Replace `addon/.clasp.json` with your own project: delete it, run
    `clasp create --type standalone --title "Email Scorer"`, then `git checkout appsscript.json`
    (clasp create overwrites the manifest).
-3. `clasp push`
+4. `clasp push`
 
 <br>
 
@@ -252,7 +256,7 @@ backend/
   brands.py          the 50 brands, lookalike and brand-name detection
   links.py           HTML link extraction and URL helpers
   gauge.py           draws the animated gauge GIF
-  tests/             97 tests
+  tests/             98 tests
   Dockerfile         the Cloud Run container
 addon/
   Code.js            collects the email, calls the backend, builds the card
@@ -265,10 +269,14 @@ docs/screenshots/    the images above
 
 ## Future work
 
+- **Machine-learning model** trained on real and reported emails: learns how much each signal really
+  matters instead of hand-picked points, and catches phishing patterns no single rule describes.
+- **User feedback from the card:**
+  - **"Report phishing"** for a dangerous email the add-on missed.
+  - **"Not phishing"** for a false alarm on a safe email.
+
+  Reports become training data for the model and help grow the brand and tracker lists.
 - **Google Safe Browsing** lookup for links: catches known-bad sites with ordinary names.
 - **Content signals:** urgency and threat wording ("verify within 24 hours", "account suspended").
-- **"Not phishing" / "Report" buttons** to collect feedback, and later a **machine-learning model**
-  trained on it to tune the point values.
 - **Public Suffix List** instead of the hand-picked domain-ending list; a larger, configurable brand list.
-- **Attachment analysis** in a sandbox (contents, not just names).
-- Dark-theme gauge, and caching Google's sign-in keys to save ~100 ms per email.
+- Caching Google's sign-in keys to save ~100 ms per email.

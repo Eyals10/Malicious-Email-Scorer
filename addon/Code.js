@@ -70,7 +70,8 @@ function buildCard(result) {
 
   // 2. Why: the top reasons, each with an icon for its kind
   if (result.reasons.length) {
-    const why = CardService.newCardSection().setHeader('Why we flagged it');
+    const why = CardService.newCardSection()
+      .setHeader(result.verdict === 'Safe' ? 'What we noticed' : 'Why we flagged it');
     result.reasons.forEach((r) => why.addWidget(row(GROUP_ICONS[r.group], escapeHtml(r.text))));
     card.addSection(why);
   }
