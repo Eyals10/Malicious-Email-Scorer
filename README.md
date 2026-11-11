@@ -1,4 +1,4 @@
-# Malicious Email Scorer
+# PhishLens
 
 A Gmail add-on that checks every email you open and tells you, in plain words, whether it looks
 **Safe**, **Suspicious** or **Malicious**: a risk score from 0 to 100 and the exact reasons behind it.
