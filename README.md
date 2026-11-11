@@ -11,7 +11,7 @@ A Gmail add-on that checks every email you open and tells you, in plain words, w
 <br>
 <br>
 
-## ⭐ Strong points
+## Strong points
 
 - **Explains every score:** plain-language reasons, no black box.
 - **Catches hidden tricks:** look-alike letters, fake link text, disguised file names.
@@ -73,7 +73,7 @@ everything else, and a clean sender can't hide a dangerous attachment.
 
 ## What it checks
 
-### ✉️ Authentication: is the sender who it claims to be? (cap 35)
+### 1 Authentication: is the sender who it claims to be? (cap 35)
 
 Read from the `Authentication-Results` header that **Gmail itself** adds, never from one the sender
 wrote (we tested that Gmail strips forged copies sent through Gmail).
@@ -87,7 +87,7 @@ wrote (we tested that Gmail strips forged copies sent through Gmail).
 
 <br>
 
-### 👤 Identity: is the sender pretending to be a brand? (cap 50)
+### 2 Identity: is the sender pretending to be a brand? (cap 50)
 
 Compared against 50 of the most impersonated brands, including major Israeli banks.
 
@@ -102,7 +102,7 @@ then allowing at most one typo, so real words like `telegraph.co.uk` aren't mist
 
 <br>
 
-### 🔗 Links: where do they really go? (cap 45)
+### 3 Links: where do they really go? (cap 45)
 
 | Check | Example | Points |
 |---|---|:---:|
@@ -118,7 +118,7 @@ as plain text. Newsletter click-trackers (SendGrid, Mailchimp, …) are recogniz
 
 <br>
 
-### 📎 Attachments: is a file hiding what it is? (cap 50)
+### 4 Attachments: is a file hiding what it is? (cap 50)
 
 | Check | Example | Points |
 |---|---|:---:|
