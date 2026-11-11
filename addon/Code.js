@@ -1,13 +1,28 @@
+/**
+ * Email Scorer add-on.
+ * Flow: you open an email -> emailData() collects it -> analyze() sends it to the backend
+ *       -> buildCard() shows the gauge, verdict, reasons and advice.
+ */
+
 const BACKEND_URL = 'https://email-scorer-api-727245842620.us-central1.run.app';
 
+// How each verdict looks on the card.
 const VERDICTS = {
-  Safe: { color: '#188038', icon: 'verified_user', title: 'Looks safe',
-          advice: 'Low risk. Stay alert anyway.' },
-  Suspicious: { color: '#E37400', icon: 'warning', title: 'Be careful',
-                advice: "Don't click links or open attachments unless you trust the sender." },
-  Malicious: { color: '#D93025', icon: 'gpp_bad', title: 'Likely phishing',
-               advice: "Don't click links, open attachments or reply. Report it as phishing in Gmail." },
+  Safe: {
+    color: '#188038', icon: 'verified_user', title: 'Looks safe',
+    advice: 'Low risk. Stay alert anyway.',
+  },
+  Suspicious: {
+    color: '#E37400', icon: 'warning', title: 'Be careful',
+    advice: "Don't click links or open attachments unless you trust the sender.",
+  },
+  Malicious: {
+    color: '#D93025', icon: 'gpp_bad', title: 'Likely phishing',
+    advice: "Don't click links, open attachments or reply. Report it as phishing in Gmail.",
+  },
 };
+
+// Google Material icon for each kind of check.
 const GROUP_ICONS = { auth: 'mail_lock', identity: 'person_alert', links: 'link', attachments: 'attach_file' };
 
 /** Runs every time the user opens an email. */
@@ -17,15 +32,17 @@ function onGmailMessageOpen(e) {
   return [buildCard(analyze(message))];
 }
 
+// ── Talking to the backend ───────────────────────────────────────────────────
+
 /** Sends the email to the backend. Returns its result, or {error} if scoring failed. */
 function analyze(message) {
   try {
     const res = UrlFetchApp.fetch(BACKEND_URL + '/analyze', {
       method: 'post',
       contentType: 'application/json',
-      headers: { Authorization: 'Bearer ' + ScriptApp.getIdentityToken() },
+      headers: { Authorization: 'Bearer ' + ScriptApp.getIdentityToken() },  // proves the request is from us
       payload: JSON.stringify(emailData(message)),
-      muteHttpExceptions: true,
+      muteHttpExceptions: true,  // read error codes ourselves instead of throwing
     });
     if (res.getResponseCode() === 200) return JSON.parse(res.getContentText());
     return { error: 'The scorer answered with error ' + res.getResponseCode() + '.' };
@@ -54,14 +71,12 @@ function cut(text, max) {
   return text.slice(0, max).replace(/[\uD800-\uDBFF]$/, '');
 }
 
+// ── The card ──────────────────────────────────────────────────────────────────
+
+/** The result card: gauge + verdict, why, what to do, all findings (folded). */
 function buildCard(result) {
+  if (result.error) return errorCard(result.error);
   const card = CardService.newCardBuilder();
-  if (result.error) {
-    // Never show "Safe" when we couldn't check: failure is not a clean bill of health.
-    return card.addSection(CardService.newCardSection().addWidget(row('error',
-      '<b>Could not check this email</b>', escapeHtml(result.error) + ' Treat its links and attachments with care.')))
-      .build();
-  }
   const v = VERDICTS[result.verdict];
 
   // 1. Gauge + verdict
@@ -85,17 +100,27 @@ function buildCard(result) {
   // 3. What to do
   card.addSection(CardService.newCardSection().setHeader('What to do').addWidget(row('lightbulb', v.advice)));
 
-  // 4. Every finding with its points, folded away
+  // 4. Every finding with its points, folded away (only when there's more than the top reasons)
   if (result.signals.length > result.reasons.length) {
     const all = CardService.newCardSection()
       .setHeader('All findings (' + result.signals.length + ')')
       .setCollapsible(true)
       .setNumUncollapsibleWidgets(0);
-    result.signals.forEach((s) => all.addWidget(row(GROUP_ICONS[s.group], escapeHtml(s.reason), '+' + s.points + ' points')));
-    card.addSection(all.addWidget(CardService.newTextParagraph()
-      .setText('<i>Each kind of check has a points cap, so the score can be lower than the sum.</i>')));
+    result.signals.forEach((s) =>
+      all.addWidget(row(GROUP_ICONS[s.group], escapeHtml(s.reason), '+' + s.points + ' points')));
+    all.addWidget(CardService.newTextParagraph()
+      .setText('<i>Each kind of check has a points cap, so the score can be lower than the sum.</i>'));
+    card.addSection(all);
   }
   return card.build();
+}
+
+/** Shown when scoring failed. Never "Safe": failure is not a clean bill of health. */
+function errorCard(message) {
+  return CardService.newCardBuilder()
+    .addSection(CardService.newCardSection().addWidget(row('error', '<b>Could not check this email</b>',
+      escapeHtml(message) + ' Treat its links and attachments with care.')))
+    .build();
 }
 
 /** One line of the card: an icon, the text and an optional small grey line under it. */
@@ -112,7 +137,9 @@ function escapeHtml(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Run once from the editor: prints the token audience the backend must expect. */
+// ── Setup helper ──────────────────────────────────────────────────────────────
+
+/** Run once from the editor: prints the token audience the backend must expect (TOKEN_AUDIENCE). */
 function logTokenAudience() {
   const part = ScriptApp.getIdentityToken().split('.')[1];
   const padded = part + '='.repeat((4 - (part.length % 4)) % 4);

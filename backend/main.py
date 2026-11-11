@@ -1,3 +1,4 @@
+"""Web server: the token check and the three addresses (/health, /gauge, /analyze)."""
 import os
 from typing import Annotated
 
@@ -13,10 +14,10 @@ from scoring import score_email
 TOKEN_AUDIENCE = os.environ.get("TOKEN_AUDIENCE", "")
 
 app = FastAPI(title="Malicious Email Scorer")
-_google_request = google_requests.Request()
+_google_request = google_requests.Request()  # used to fetch Google's public keys when checking a token
 
 
-def verify_user(authorization: str | None = Header(default=None)) -> str:
+def verify_user(authorization: str | None = Header(default=None)) -> None:
     """Accept only requests carrying a valid Google ID token issued to our add-on."""
     if not TOKEN_AUDIENCE:
         # Fail closed: an unconfigured server must not serve anyone.
@@ -24,12 +25,9 @@ def verify_user(authorization: str | None = Header(default=None)) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "Missing token")
     try:
-        claims = id_token.verify_oauth2_token(
-            authorization.removeprefix("Bearer "), _google_request, TOKEN_AUDIENCE
-        )
+        id_token.verify_oauth2_token(authorization.removeprefix("Bearer "), _google_request, TOKEN_AUDIENCE)
     except ValueError:
         raise HTTPException(401, "Invalid token")
-    return claims.get("email", "")
 
 
 class AnalyzeRequest(BaseModel):
@@ -43,6 +41,7 @@ class AnalyzeRequest(BaseModel):
 
 @app.get("/health")
 def health():
+    """Is the server up? Public, reveals nothing."""
     return {"status": "ok"}
 
 
@@ -50,9 +49,10 @@ def health():
 def gauge(score: int = Path(ge=0, le=100)):
     """Public: Gmail fetches card images itself, without our token. The picture shows only a number."""
     return Response(gauge_gif(score), media_type="image/gif",
-                    headers={"Cache-Control": "public, max-age=86400"})
+                    headers={"Cache-Control": "public, max-age=86400"})  # Google's image proxy may keep it a day
 
 
-@app.post("/analyze")
-def analyze(req: AnalyzeRequest, user: str = Depends(verify_user)):
+@app.post("/analyze", dependencies=[Depends(verify_user)])
+def analyze(req: AnalyzeRequest):
+    """Score one email. Runs only after verify_user accepted the token."""
     return score_email(req)

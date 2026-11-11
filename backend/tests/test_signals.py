@@ -3,7 +3,9 @@ import pytest
 from links import MAX_HOSTS
 from signals import check_attachments, check_auth, check_identity, check_links
 
-GMAIL = "mx.google.com;\r\n       "
+# ── Authentication: SPF / DKIM / DMARC ─────────────────────────────────────────
+
+GMAIL = "mx.google.com;\r\n       "  # how Gmail's own header starts
 
 
 def points(signals):
@@ -41,6 +43,8 @@ def test_fake_header_not_from_gmail_is_ignored():
 def test_missing_header_adds_nothing():
     assert check_auth("") == []
 
+
+# ── Identity: who the sender pretends to be ───────────────────────────────────
 
 LOOKALIKES = ["paypa1.com", "micros0ft-support.com", "paypal-secure-login.com", "amazom.com",
               "xn--pple-43d.com", "paypal.verify-account.xyz", "ups-delivery-notice.com",
@@ -86,11 +90,14 @@ def test_reply_to_same_company_is_fine():
     assert check_identity("news@mail.company.com", "support@company.com") == []
 
 
+# ── Links: where they really go ───────────────────────────────────────────────
+
 def link(href, text):
     return f'<a href="{href}">{text}</a>'
 
 
 def link_points(html):
+    """Points of each link signal, highest first."""
     return sorted((s.points for s in check_links(html)), reverse=True)
 
 
@@ -142,6 +149,8 @@ def test_padding_does_not_hide_a_bad_link():
     bad = link("https://secure-login.ru/x", "www.chase.com")
     assert link_points(padding + bad) == [25, 25]  # the mismatch is still found, plus "too many"
 
+
+# ── Attachments: is a file hiding what it is? ─────────────────────────────────
 
 @pytest.mark.parametrize("name", ["invoice.pdf.exe", "invoice.pdf      .exe", "Photo.JPG.scr", "invoice\u202Efdp.exe",
                                   "invoice.pdf.html."])

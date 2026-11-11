@@ -1,3 +1,4 @@
+"""Brands: the 50 most-impersonated brands, and detection of domains and names that imitate them."""
 import re
 
 from domains import decode_punycode, edit_distance, normalize, registrable_domain

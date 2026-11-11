@@ -1,3 +1,4 @@
+"""Link helpers: pull links out of the email's HTML and read where each one really goes."""
 import ipaddress
 import re
 from html.parser import HTMLParser
@@ -93,5 +94,7 @@ def domain_in_text(text: str) -> str:
     if not m:
         return ""
     domain = m.group(1)
-    looks_like_address = t.startswith(("http://", "https://", "www.")) or domain.rsplit(".", 1)[1] in _COMMON_TLDS
+    # "invoice.pdf" matches the pattern too, so also require a web prefix or a common ending (.com, .co.il, ...)
+    looks_like_address = (t.startswith(("http://", "https://", "www."))
+                          or domain.rsplit(".", 1)[1] in _COMMON_TLDS)
     return domain if looks_like_address else ""

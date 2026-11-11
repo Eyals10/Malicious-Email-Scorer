@@ -1,3 +1,4 @@
+"""Domain helpers: read addresses, find the part of a domain a person buys, and undo disguises."""
 from email.utils import parseaddr
 
 # shortcut: hand-picked two-part suffixes; switch to the Public Suffix List (tldextract) for production.
