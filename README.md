@@ -6,6 +6,11 @@
 
 <p align="center"><b>See what every email is really hiding.</b></p>
 
+<p align="center">
+  <a href="https://github.com/Eyals10/PhishLens/actions/workflows/tests.yml"><img src="https://github.com/Eyals10/PhishLens/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
+</p>
+
 A Gmail add-on that checks every email you open and tells you, in plain words, whether it looks
 **Safe**, **Suspicious** or **Malicious**: a risk score from 0 to 100 and the exact reasons behind it.
 
