@@ -1,4 +1,4 @@
-"""Web server: the token check and the three addresses (/health, /gauge, /analyze)."""
+"""PhishLens web server: the token check and the three addresses (/health, /gauge, /analyze)."""
 import os
 from typing import Annotated
 
@@ -13,7 +13,7 @@ from scoring import score_email
 # The add-on's OAuth client ID. Tokens issued for any other app are rejected.
 TOKEN_AUDIENCE = os.environ.get("TOKEN_AUDIENCE", "")
 
-app = FastAPI(title="Malicious Email Scorer")
+app = FastAPI(title="PhishLens")
 _google_request = google_requests.Request()  # used to fetch Google's public keys when checking a token
 
 

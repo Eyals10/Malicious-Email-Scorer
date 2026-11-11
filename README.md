@@ -1,12 +1,18 @@
-# PhishLens
+<p align="center">
+  <img src="docs/logo.png" width="140" alt="PhishLens logo: a fishing hook catching an email, seen through a magnifying glass">
+</p>
+
+<h1 align="center">PhishLens</h1>
+
+<p align="center"><b>See what every email is really hiding.</b></p>
 
 A Gmail add-on that checks every email you open and tells you, in plain words, whether it looks
 **Safe**, **Suspicious** or **Malicious**: a risk score from 0 to 100 and the exact reasons behind it.
 
 | Safe | Suspicious | Malicious |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/safe.png" width="260" alt="Safe card: score 0, no warning signs found"> | <img src="docs/screenshots/suspicious.png" width="260" alt="Suspicious card: score 50, fake Microsoft sender and lookalike link"> | <img src="docs/screenshots/malicious.png" width="260" alt="Malicious card: score 85, fake PayPal sender and mismatched links"> |
-| A real email: no warning signs | Fake "Microsoft" sender with an `rnicrosoft` link | Fake "PayPal" email with disguised links |
+| <img src="docs/screenshots/safe.png" width="250" alt="Safe card: score 0, no warning signs found"> | <img src="docs/screenshots/suspicious.png" width="250" alt="Suspicious card: score 50, fake Microsoft sender and lookalike link"> | <img src="docs/screenshots/malicious.png" width="250" alt="Malicious card: score 85, fake PayPal sender and mismatched links"> |
+| A real email:<br>no warning signs | Fake "Microsoft" sender<br>with an `rnicrosoft` link | Fake "PayPal" email<br>with disguised links |
 
 <br>
 <br>
@@ -191,8 +197,8 @@ Python packages (`backend/requirements.txt`):
 ### 1. Run the tests
 
 ```bash
-git clone https://github.com/Eyals10/Malicious-Email-Scorer.git
-cd Malicious-Email-Scorer/backend
+git clone https://github.com/Eyals10/PhishLens.git
+cd PhishLens/backend
 python -m venv .venv
 .venv\Scripts\activate            # macOS / Linux: source .venv/bin/activate
 pip install -r requirements-dev.txt
@@ -227,7 +233,7 @@ cd ../addon
    clasp fails without it).
 2. Put your service URL in `BACKEND_URL` (`Code.js`) and in `urlFetchWhitelist` (`appsscript.json`).
 3. Replace `addon/.clasp.json` with your own project: delete it, run
-   `clasp create --type standalone --title "Email Scorer"`, then `git checkout appsscript.json`
+   `clasp create --type standalone --title "PhishLens"`, then `git checkout appsscript.json`
    (clasp create overwrites the manifest).
 4. `clasp push`
 
@@ -261,7 +267,7 @@ backend/
 addon/
   Code.js            collects the email, calls the backend, builds the card
   appsscript.json    add-on manifest: permissions, trigger, allowed URL
-docs/screenshots/    the images above
+docs/                logo and the screenshots above
 ```
 
 <br>

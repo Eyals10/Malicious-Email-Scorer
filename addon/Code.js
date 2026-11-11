@@ -1,5 +1,5 @@
 /**
- * Email Scorer add-on.
+ * PhishLens: Gmail add-on that scores every email you open.
  * Flow: you open an email -> emailData() collects it -> analyze() sends it to the backend
  *       -> buildCard() shows the gauge, verdict, reasons and advice.
  */
