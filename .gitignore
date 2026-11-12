@@ -5,6 +5,9 @@ __pycache__/
 .pytest_cache/
 backend/gauges/
 
+# Images (logo, screenshots); already tracked files stay in git
+docs/
+
 # Secrets — never commit
 .env
 .clasprc.json
