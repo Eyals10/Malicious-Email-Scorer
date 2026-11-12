@@ -337,6 +337,9 @@ docs/                logo and the screenshots above
   - **"Not phishing"** for a false alarm on a safe email.
 
   Reports become training data for the model and help grow the brand and tracker lists.
+- **Sandbox testing:** open suspicious links and attachments inside an isolated virtual machine (a
+  "sandbox") and watch what they actually do: does the page ask for a password, does a download start,
+  does a document try to run code? This judges behavior, not just names and addresses.
 - **Content signals:** urgency and threat wording ("verify within 24 hours", "account suspended").
 - **Public Suffix List** instead of the hand-picked domain-ending list; a larger, configurable brand list.
 
