@@ -341,7 +341,9 @@ docs/                logo and the screenshots above
   "sandbox") and watch what they actually do: does the page ask for a password, does a download start,
   does a document try to run code? This judges behavior, not just names and addresses.
 - **Content signals:** urgency and threat wording ("verify within 24 hours", "account suspended").
-- **Public Suffix List** instead of the hand-picked domain-ending list; a larger, configurable brand list.
+- **Attachment hashes on VirusTotal:** compute each attachment's SHA-256 fingerprint (a "hash") and look
+  it up on VirusTotal to see if antivirus engines already know the file as malware. Only the hash is
+  sent, never the file itself.
 
 <br>
 <br>
