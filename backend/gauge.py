@@ -119,10 +119,11 @@ def gauge_gif(score: int) -> bytes:
 
 
 if __name__ == "__main__":
-    # Runs while the Docker image is built: draw every score once and save it as a file,
+    # Runs while the Docker image is built: draw every possible score once and save it as a file,
     # so the server only sends ready files. Usage: python gauge.py OUTPUT_FOLDER
     out = Path(sys.argv[1])
     out.mkdir(exist_ok=True)
+    scores = range(0, 101, 5)  # all signal points and caps are multiples of 5; main.py draws any other score on the fly
     with ProcessPoolExecutor() as pool:  # all CPU cores, for a shorter build
-        for score, gif in zip(range(101), pool.map(gauge_gif, range(101))):
+        for score, gif in zip(scores, pool.map(gauge_gif, scores)):
             (out / f"{score}.gif").write_bytes(gif)

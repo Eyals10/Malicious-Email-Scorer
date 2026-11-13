@@ -14,7 +14,7 @@ from scoring import score_email
 # The add-on's OAuth client ID. Tokens issued for any other app are rejected.
 TOKEN_AUDIENCE = os.environ.get("TOKEN_AUDIENCE", "")
 
-# All 101 gauge animations, drawn while the Docker image is built (see Dockerfile).
+# The 21 possible gauge animations (0, 5 ... 100), drawn while the Docker image is built (see Dockerfile).
 GAUGES = pathlib.Path(__file__).parent / "gauges"
 
 app = FastAPI(title="PhishLens")

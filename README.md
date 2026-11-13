@@ -252,7 +252,7 @@ gcloud run deploy email-scorer-api --source . --region us-central1 --allow-unaut
 - No Safe Browsing key? Leave out `--set-secrets ...`; that one check is then skipped.
 - `--min-instances 1` keeps one server awake (no slow first load) for a few dollars a month.
   Use `0` to stay in the free tier.
-- The build draws all 101 gauge animations in advance, so it takes a few minutes.
+- The build draws the 21 possible gauge animations (scores 0, 5 ... 100) in advance, so it takes a little longer.
 
 <br>
 
@@ -313,7 +313,7 @@ backend/
   brands.py          the 50 brands, lookalike and brand-name detection
   links.py           HTML link extraction and URL helpers
   safe_browsing.py   asks Google Safe Browsing about the email's links
-  gauge.py           draws the animated gauge GIFs (all 101, at build time)
+  gauge.py           draws the animated gauge GIFs (the 21 possible scores, at build time)
   tests/             103 tests
   Dockerfile         the Cloud Run container
 addon/
