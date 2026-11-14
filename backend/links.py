@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 # Real emails link to a handful of different websites. Past this, we skip the slow lookalike check
 # and flag the email instead (padding with harmless links must not hide a bad one).
-MAX_HOSTS = 200
+MAX_HOSTS = 50
 
 SHORTENERS = {"bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly",
               "rebrand.ly", "cutt.ly", "shorturl.at", "rb.gy", "t.ly", "tiny.cc"}

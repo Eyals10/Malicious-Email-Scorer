@@ -122,7 +122,7 @@ then allowing at most one typo, so real words like `telegraph.co.uk` aren't mist
 | On Google's list of known phishing or malware sites | checked live with Google Safe Browsing | +45, **forces Malicious** |
 | Link text shows a different site | text `www.chase.com`, link `secure-login.ru` | +25 |
 | Link to a lookalike domain | `https://paypa1-secure.com/login` | +25 |
-| Links to over 200 different sites | padding to hide a bad link | +25 |
+| Links to over 50 different sites | padding to hide a bad link | +25 |
 | Bare IP address | `http://185.23.11.4`, also `http://3105225988` | +20 |
 | Punycode (foreign look-alike letters) | `xn--pple-43d.com` | +15 |
 | URL shortener | `bit.ly`, `tinyurl.com` | +5 |
